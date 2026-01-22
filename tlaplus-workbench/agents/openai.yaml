@@ -1,0 +1,4 @@
+interface:
+  display_name: "TLA+ Workbench"
+  short_description: "Write and check TLA+ specs with TLC from natural language"
+  default_prompt: "Turn a natural-language system design into a minimal TLA+ spec (.tla) and TLC model config (.cfg), run TLC model checking, summarize results/counterexamples with explicit bounds and assumptions, and iterate until either properties pass (within bounds) or a counterexample remains."
