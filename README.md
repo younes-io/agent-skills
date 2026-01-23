@@ -1,4 +1,4 @@
-# younes-io/skills
+# younes-io/agent-skills
 
 A small skill pack compatible with the Vercel `skills` CLI.
 
@@ -17,13 +17,13 @@ npx -y skills add . --list
 Install from GitHub:
 
 ```bash
-npx -y skills add younes-io/skills --skill tlaplus-workbench
+npx -y skills add younes-io/agent-skills --skill tlaplus-workbench
 ```
 
 Alternatively, use the URL form:
 
 ```bash
-npx -y skills add https://github.com/younes-io/skills.git --skill tlaplus-workbench
+npx -y skills add https://github.com/younes-io/agent-skills.git --skill tlaplus-workbench
 ```
 
 ## Repo layout
@@ -43,4 +43,3 @@ Common prerequisites:
 - `python3`
 - `java`
 - `tla2tools.jar` (set `TLA2TOOLS_JAR` or pass `--jar` to the runner script)
-
