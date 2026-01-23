@@ -87,10 +87,10 @@ Prereqs:
 - `java` on PATH
 - `tla2tools.jar` available and pointed to by `TLA2TOOLS_JAR` (or pass `--jar`)
 
-Run:
+Run (from the `tlaplus-workbench` skill directory):
 
 ```bash
-python3 "scripts/tlc_check.py" --spec path/to/Foo.tla --cfg path/to/Foo.cfg
+python3 scripts/tlc_check.py --spec path/to/Foo.tla --cfg path/to/Foo.cfg
 ```
 
 This writes a run directory under the spec folder:
