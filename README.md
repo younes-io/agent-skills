@@ -40,6 +40,7 @@ Skills live under:
 See `skills/tlaplus-workbench/SKILL.md` for full usage.
 
 Common prerequisites:
-- `python3`
+- `bash`
+- `jq`
 - `java`
 - `tla2tools.jar` (set `TLA2TOOLS_JAR` or pass `--jar` to the runner script)
