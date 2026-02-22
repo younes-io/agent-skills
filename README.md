@@ -38,6 +38,7 @@ Skills live under:
 ## tlaplus-workbench prerequisites
 
 See `skills/tlaplus-workbench/SKILL.md` for full usage.
+Examples: `https://github.com/younes-io/tlaplus-workbench-examples`
 
 Common prerequisites:
 - `bash`

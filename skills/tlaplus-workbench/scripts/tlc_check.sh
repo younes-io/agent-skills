@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: dev@younes.io
+# Maintainer: dev@younes.io
 set -euo pipefail
 
 usage() {
