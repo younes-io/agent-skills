@@ -1,0 +1,70 @@
+name: Manual Create Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to create (example: v1.2.3)"
+        required: true
+        type: string
+      target:
+        description: "Branch, tag, or commit SHA to tag"
+        required: true
+        default: main
+        type: string
+      message:
+        description: "Optional annotated tag message"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+          TARGET_REF: ${{ inputs.target }}
+          TAG_MESSAGE: ${{ inputs.message }}
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force origin
+
+          # Validate tag reference format early.
+          git check-ref-format "refs/tags/${TAG_NAME}"
+
+          if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q .; then
+            echo "Tag already exists on origin: ${TAG_NAME}" >&2
+            exit 1
+          fi
+
+          TARGET_SHA="$(git rev-parse --verify "${TARGET_REF}^{commit}")"
+          if [[ -z "${TAG_MESSAGE}" ]]; then
+            TAG_MESSAGE="Manual tag ${TAG_NAME}"
+          fi
+
+          git tag -a "${TAG_NAME}" "${TARGET_SHA}" -m "${TAG_MESSAGE}"
+          git push origin "refs/tags/${TAG_NAME}"
+
+          {
+            echo "### Tag Created"
+            echo "- Tag: \`${TAG_NAME}\`"
+            echo "- Target: \`${TARGET_REF}\`"
+            echo "- Commit: \`${TARGET_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
