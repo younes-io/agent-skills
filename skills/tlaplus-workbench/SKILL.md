@@ -85,12 +85,13 @@ If you introduce `CONSTRAINT` / `ACTION_CONSTRAINT`, call it out as a *coverage 
 
 Prereqs:
 - `java` on PATH
+- `jq` on PATH
 - `tla2tools.jar` available and pointed to by `TLA2TOOLS_JAR` (or pass `--jar`)
 
 Run (from the `tlaplus-workbench` skill directory):
 
 ```bash
-python3 scripts/tlc_check.py --spec path/to/Foo.tla --cfg path/to/Foo.cfg
+scripts/tlc_check.sh --spec path/to/Foo.tla --cfg path/to/Foo.cfg
 ```
 
 This writes a run directory under the spec folder:
@@ -113,8 +114,8 @@ If TLC passes:
 ## Resources
 
 ### scripts/
-- `scripts/tlc_check.py`: run TLC with `-dumpTrace json`, capture logs, emit `summary.json`
-- `scripts/tlc_trace_summary.py`: summarize a `counterexample.json` into step-by-step diffs (optional helper)
+- `scripts/tlc_check.sh`: run TLC with `-dumpTrace json`, capture logs, emit `summary.json`
+- `scripts/tlc_trace_summary.sh`: summarize a `counterexample.json` into step-by-step diffs (optional helper)
 
 ### references/
 - `references/spec_skeleton.md`: minimal skeleton patterns and cfg snippets
