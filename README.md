@@ -5,6 +5,7 @@ A small skill pack compatible with the Vercel `skills` CLI.
 ## Skills
 
 - `tlaplus-workbench`: Write and iteratively refine executable TLA+ specs (`.tla`) and TLC configs (`.cfg`), run TLC model checking, and summarize counterexamples.
+- `tlaps-workbench`: Write and iteratively refine TLAPS theorem proofs in TLA+ (`.tla`), run `tlapm`, and summarize proved vs failed/omitted obligations.
 
 ## Install / List (Vercel skills CLI)
 
@@ -18,12 +19,14 @@ Install from GitHub:
 
 ```bash
 npx -y skills add younes-io/agent-skills --skill tlaplus-workbench
+npx -y skills add younes-io/agent-skills --skill tlaps-workbench
 ```
 
 Alternatively, use the URL form:
 
 ```bash
 npx -y skills add https://github.com/younes-io/agent-skills.git --skill tlaplus-workbench
+npx -y skills add https://github.com/younes-io/agent-skills.git --skill tlaps-workbench
 ```
 
 ## Repo layout
@@ -38,10 +41,23 @@ Skills live under:
 ## tlaplus-workbench prerequisites
 
 See `skills/tlaplus-workbench/SKILL.md` for full usage.
-Examples: https://github.com/younes-io/tlaplus-workbench-examples
+
+Examples: <https://github.com/younes-io/tlaplus-workbench-examples>
 
 Common prerequisites:
 - `bash`
 - `jq`
 - `java`
 - `tla2tools.jar` (set `TLA2TOOLS_JAR` or pass `--jar` to the runner script)
+
+## tlaps-workbench prerequisites
+
+See `skills/tlaps-workbench/SKILL.md` for full usage.
+
+Examples: <https://github.com/younes-io/tlaplus-workbench-examples>
+
+
+Common prerequisites:
+- `bash`
+- `jq`
+- `tlapm` (or pass `--tlapm` with an absolute path/wrapper)
