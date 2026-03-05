@@ -133,18 +133,98 @@ json_num_or_null() {
   fi
 }
 
-extract_first_number() {
-  local file="$1"
-  local pattern="$2"
-  local line
-  local number
-  line="$(grep -iE "$pattern" "$file" 2>/dev/null | head -n 1 || true)"
-  if [[ -z "$line" ]]; then
-    return 0
+collect_descendants() {
+  local root_pid="$1"
+  local frontier
+  local descendants
+  local next_frontier
+  local pid
+  local children
+
+  frontier="$root_pid"
+  descendants=""
+  while [[ -n "$frontier" ]]; do
+    next_frontier=""
+    for pid in $frontier; do
+      children="$(
+        ps -eo pid=,ppid= 2>/dev/null | awk -v p="$pid" '$2 == p { print $1 }'
+      )"
+      if [[ -n "$children" ]]; then
+        descendants="${descendants}${descendants:+$'\n'}${children}"
+        next_frontier="${next_frontier}${next_frontier:+ }${children//$'\n'/ }"
+      fi
+    done
+    frontier="$next_frontier"
+  done
+
+  if [[ -n "$descendants" ]]; then
+    printf '%s\n' "$descendants" | awk '!seen[$0]++'
   fi
-  number="$(printf '%s\n' "$line" | grep -Eo '[0-9]+' | head -n 1 || true)"
-  if [[ -n "$number" ]]; then
-    printf '%s\n' "$number"
+}
+
+terminate_process_tree() {
+  local root_pid="$1"
+  local pids
+  local descendants
+
+  descendants="$(collect_descendants "$root_pid" || true)"
+  pids=""
+  if [[ -n "$descendants" ]]; then
+    pids="${descendants//$'\n'/ }"
+  fi
+  pids="${pids}${pids:+ }${root_pid}"
+  if [[ -n "$pids" ]]; then
+    kill $pids 2>/dev/null || true
+  fi
+
+  sleep 2
+
+  descendants="$(collect_descendants "$root_pid" || true)"
+  pids=""
+  if [[ -n "$descendants" ]]; then
+    pids="${descendants//$'\n'/ }"
+  fi
+  if kill -0 "$root_pid" 2>/dev/null; then
+    pids="${pids}${pids:+ }${root_pid}"
+  fi
+  if [[ -n "$pids" ]]; then
+    kill -9 $pids 2>/dev/null || true
+  fi
+}
+
+extract_after_keyword() {
+  local line="$1"
+  local keywords="$2"
+  local match
+  match="$(printf '%s\n' "$line" | grep -Eo "(${keywords})[^0-9]*[0-9]+" 2>/dev/null | tail -n 1 || true)"
+  if [[ -n "$match" ]]; then
+    printf '%s\n' "$match" | sed -nE 's/.*[^0-9]([0-9]+)$/\1/p'
+  fi
+}
+
+extract_before_keyword() {
+  local line="$1"
+  local keywords="$2"
+  local match
+  match="$(printf '%s\n' "$line" | grep -Eo "[0-9]+[^[:alnum:]]*(${keywords})" 2>/dev/null | tail -n 1 || true)"
+  if [[ -n "$match" ]]; then
+    printf '%s\n' "$match" | sed -nE 's/^([0-9]+).*/\1/p'
+  fi
+}
+
+extract_count_for_keywords() {
+  local line="$1"
+  local keywords="$2"
+  local value
+
+  value="$(extract_after_keyword "$line" "$keywords")"
+  if [[ -n "$value" ]]; then
+    printf '%s\n' "$value"
+    return
+  fi
+  value="$(extract_before_keyword "$line" "$keywords")"
+  if [[ -n "$value" ]]; then
+    printf '%s\n' "$value"
   fi
 }
 
@@ -172,6 +252,24 @@ append_note() {
 
 parse_counts() {
   local combined="$1"
+  local line
+  local lower_line
+  local line_no=0
+  local total
+  local proved
+  local failed
+  local omitted
+  local field_count
+  local progress_hint
+  local score
+  local best_score=-1
+  local best_line_no=0
+  local best_total=""
+  local best_proved=""
+  local best_failed=""
+  local best_omitted=""
+  local best_progress_hint=0
+  local best_field_count=0
   COUNT_TOTAL=""
   COUNT_PROVED=""
   COUNT_FAILED=""
@@ -183,35 +281,81 @@ parse_counts() {
     return
   fi
 
-  COUNT_TOTAL="$(extract_first_number "$combined" 'obligation')"
-  COUNT_PROVED="$(extract_first_number "$combined" 'proved|discharged|checked')"
-  COUNT_FAILED="$(extract_first_number "$combined" 'failed|unproved|not proved|remaining')"
-  COUNT_OMITTED="$(extract_first_number "$combined" 'omitted|skipped|unchecked')"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line_no=$((line_no + 1))
+    lower_line="$(printf '%s\n' "$line" | tr '[:upper:]' '[:lower:]')"
 
-  if [[ -z "$COUNT_TOTAL" ]]; then
-    append_note "Could not parse total obligations from TLAPS output."
+    total="$(extract_count_for_keywords "$lower_line" 'total|obligations?')"
+    proved="$(extract_count_for_keywords "$lower_line" 'proved|discharged|checked')"
+    failed="$(extract_count_for_keywords "$lower_line" 'failed|unproved|not[[:space:]]+proved|remaining')"
+    omitted="$(extract_count_for_keywords "$lower_line" 'omitted|skipped|unchecked')"
+
+    field_count=0
+    [[ -n "$total" ]] && field_count=$((field_count + 1))
+    [[ -n "$proved" ]] && field_count=$((field_count + 1))
+    [[ -n "$failed" ]] && field_count=$((field_count + 1))
+    [[ -n "$omitted" ]] && field_count=$((field_count + 1))
+
+    if [[ -z "$total" || "$field_count" -lt 2 ]]; then
+      continue
+    fi
+
+    progress_hint=0
+    if [[ "$lower_line" =~ [0-9]+[[:space:]]*(/|of)[[:space:]]*[0-9]+ && -z "$failed" && -z "$omitted" ]]; then
+      progress_hint=1
+    fi
+
+    score=$((field_count * 100))
+    if (( progress_hint == 0 )); then
+      score=$((score + 25))
+    fi
+
+    if (( score > best_score || (score == best_score && line_no > best_line_no) )); then
+      best_score="$score"
+      best_line_no="$line_no"
+      best_total="$total"
+      best_proved="$proved"
+      best_failed="$failed"
+      best_omitted="$omitted"
+      best_progress_hint="$progress_hint"
+      best_field_count="$field_count"
+    fi
+  done <"$combined"
+
+  if (( best_score < 0 )); then
+    append_note "Could not parse trustworthy obligation summary counts from TLAPS output."
+    return
   fi
 
-  if [[ -z "$COUNT_PROVED" && -z "$COUNT_FAILED" && -z "$COUNT_OMITTED" ]]; then
-    append_note "Could not parse proved/failed/omitted obligation counts from TLAPS output."
+  COUNT_TOTAL="$best_total"
+  COUNT_PROVED="$best_proved"
+  COUNT_FAILED="$best_failed"
+  COUNT_OMITTED="$best_omitted"
+
+  if [[ "$best_progress_hint" == "1" && -z "$COUNT_FAILED" && -z "$COUNT_OMITTED" ]]; then
+    if [[ "$COUNT_TOTAL" =~ ^[0-9]+$ && "$COUNT_PROVED" =~ ^[0-9]+$ && "$COUNT_PROVED" -lt "$COUNT_TOTAL" ]]; then
+      COUNT_TOTAL=""
+      COUNT_PROVED=""
+      COUNT_FAILED=""
+      COUNT_OMITTED=""
+      append_note "Detected progress-style obligation counts without final summary; leaving counts as null."
+      return
+    fi
   fi
 
-  if [[ "$COUNT_TOTAL" =~ ^[0-9]+$ ]]; then
-    local subtotal=0
-    if [[ "$COUNT_PROVED" =~ ^[0-9]+$ ]]; then
-      subtotal=$((subtotal + COUNT_PROVED))
-    fi
-    if [[ "$COUNT_FAILED" =~ ^[0-9]+$ ]]; then
-      subtotal=$((subtotal + COUNT_FAILED))
-    fi
-    if [[ "$COUNT_OMITTED" =~ ^[0-9]+$ ]]; then
-      subtotal=$((subtotal + COUNT_OMITTED))
-    fi
+  if [[ "$COUNT_TOTAL" =~ ^[0-9]+$ && "$COUNT_PROVED" =~ ^[0-9]+$ && "$COUNT_FAILED" =~ ^[0-9]+$ && "$COUNT_OMITTED" =~ ^[0-9]+$ ]]; then
+    local subtotal
+    subtotal=$((COUNT_PROVED + COUNT_FAILED + COUNT_OMITTED))
     if (( COUNT_TOTAL >= subtotal )); then
       COUNT_UNKNOWN=$((COUNT_TOTAL - subtotal))
     else
       COUNT_UNKNOWN=0
       append_note "Parsed counts exceeded parsed total obligations; set unknown=0."
+    fi
+  else
+    COUNT_UNKNOWN=""
+    if [[ "$best_field_count" -lt 4 ]]; then
+      append_note "Parsed partial obligation summary counts; unknown set to null."
     fi
   fi
 }
@@ -232,15 +376,15 @@ write_summary() {
 
   : >"$combined"
   if [[ -f "$stdout_path" ]]; then
-    head -n "$MAX_LINES" "$stdout_path" >>"$combined" || true
+    cat "$stdout_path" >>"$combined" || true
   fi
   if [[ -f "$stderr_path" ]]; then
-    head -n "$MAX_LINES" "$stderr_path" >>"$combined" || true
+    cat "$stderr_path" >>"$combined" || true
   fi
 
   NOTES=()
   if (( MAX_LINES == 0 )); then
-    append_note "--max-lines is 0; excerpts and parsing input are empty by configuration."
+    append_note "--max-lines is 0; excerpts are empty by configuration."
   fi
   parse_counts "$combined"
 
@@ -396,7 +540,7 @@ if [[ -z "$tlapm_resolved" ]]; then
   finished_epoch="$(date +%s)"
   finished_at_utc="$(iso_utc_now)"
   duration_ms=$(( (finished_epoch - started_epoch) * 1000 ))
-  write_summary "error" 127 "false"
+  write_summary "error" 2 "false"
   printf 'missing required command: %s\n' "$TLAPM_BIN" >&2
   exit 2
 fi
@@ -418,9 +562,7 @@ if (( TIMEOUT_SECS > 0 )); then
     sleep "$TIMEOUT_SECS"
     if kill -0 "$tlapm_pid" 2>/dev/null; then
       : >"$timeout_flag"
-      kill "$tlapm_pid" 2>/dev/null || true
-      sleep 2
-      kill -9 "$tlapm_pid" 2>/dev/null || true
+      terminate_process_tree "$tlapm_pid"
     fi
   ) &
   watchdog_pid=$!

@@ -1,0 +1,33 @@
+name: Skill CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  tlaps-workbench:
+    name: TLAPS Workbench Script Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required tools
+        run: |
+          set -euo pipefail
+          command -v bash
+          command -v jq
+
+      - name: Shell syntax checks
+        run: |
+          set -euo pipefail
+          bash -n skills/tlaps-workbench/scripts/tlaps_check.sh
+          bash -n skills/tlaps-workbench/scripts/tests/tlaps_check_test.sh
+
+      - name: Run TLAPS runner regression tests
+        run: |
+          set -euo pipefail
+          bash skills/tlaps-workbench/scripts/tests/tlaps_check_test.sh
