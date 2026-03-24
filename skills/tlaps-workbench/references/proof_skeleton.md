@@ -53,15 +53,54 @@ PROOF
 
 Use this when TLAPS fails on a monolithic step.
 
-## 4) Definition Expansion Guidance
+## 4) Formula Equivalence Skeleton
+
+```tla
+THEOREM RefactorPreservesMeaning ==
+  F <=> G
+PROOF
+  <1>1. F => G
+    <2>1. ...
+    <2>2. QED BY DEF F, G
+  <1>2. G => F
+    <2>1. ...
+    <2>2. QED BY DEF F, G
+  <1>3. QED BY <1>1, <1>2
+```
+
+Use this when a spec refactor needs proof of semantic preservation.
+
+## 5) Invariant Strengthening Pattern
+
+```tla
+THEOREM InvPreserved ==
+  ASSUME TypeOK, Inv, Next
+  PROVE  Inv'
+PROOF
+  <1>1. SUFFICES PROVE Strengthening
+    <2>1. ...
+    <2>2. QED
+  <1>2. CASE ActionA
+    <2>1. ...
+    <2>2. QED BY <1>1 DEF ActionA
+  <1>3. CASE ActionB
+    <2>1. ...
+    <2>2. QED BY <1>1 DEF ActionB
+  <1>4. QED BY <1>2, <1>3
+```
+
+Use this when the original invariant is too weak and one extra fact unblocks each action case.
+
+## 6) Definition Expansion Guidance
 
 - Expand only required definitions with `BY DEF Foo, Bar`.
 - Avoid broad expansion unless debugging.
 - Prefer proving helper lemmas over repeated broad `DEF` lists.
 
-## 5) Practical Ordering
+## 7) Practical Ordering
 
 1. State theorem with exact assumptions.
-2. Add one decomposition step (`SUFFICES` or `CASE`).
-3. Prove subgoals with short steps.
-4. Close with explicit `QED BY ...`.
+2. Pick the proof class before choosing a skeleton.
+3. Add one decomposition step (`SUFFICES` or `CASE`).
+4. Prove subgoals with short steps.
+5. Close with explicit `QED BY ...`.
