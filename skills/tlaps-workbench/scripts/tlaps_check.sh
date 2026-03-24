@@ -290,6 +290,28 @@ parse_counts() {
     failed="$(extract_count_for_keywords "$lower_line" 'failed|unproved|not[[:space:]]+proved|remaining')"
     omitted="$(extract_count_for_keywords "$lower_line" 'omitted|skipped|unchecked')"
 
+    # TLAPM commonly emits final success summaries such as:
+    #   [INFO]: All 1 obligation proved.
+    # Treat this as a trustworthy terminal summary with zero failed/omitted obligations.
+    if [[ "$lower_line" =~ all[[:space:]]+([0-9]+)[[:space:]]+obligations?[[:space:]]+proved ]]; then
+      total="${BASH_REMATCH[1]}"
+      proved="${BASH_REMATCH[1]}"
+      failed="0"
+      omitted="0"
+    fi
+
+    # TLAPM also emits failure summaries such as:
+    #   [ERROR]: 1/1 obligation failed.
+    # Treat this as a terminal summary with all obligations accounted for.
+    if [[ "$lower_line" =~ ([0-9]+)[[:space:]]*/[[:space:]]*([0-9]+)[[:space:]]+obligations?[[:space:]]+failed ]]; then
+      failed="${BASH_REMATCH[1]}"
+      total="${BASH_REMATCH[2]}"
+      if [[ "$total" =~ ^[0-9]+$ && "$failed" =~ ^[0-9]+$ && "$failed" -le "$total" ]]; then
+        proved="$((total - failed))"
+        omitted="0"
+      fi
+    fi
+
     field_count=0
     [[ -n "$total" ]] && field_count=$((field_count + 1))
     [[ -n "$proved" ]] && field_count=$((field_count + 1))
