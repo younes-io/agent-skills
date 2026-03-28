@@ -39,6 +39,7 @@ Start with the smallest stable structure:
 
 Prefer explicit sub-lemmas over long single-step `BY` clauses.
 Use `BY DEF ...` only for required definitions.
+Formula-equivalence proofs for refactors are a supported pattern, for example `THEOREM F <=> G BY DEF F, G`.
 
 ### 3) Run TLAPS Deterministically
 
@@ -78,6 +79,7 @@ Report:
 - remaining proof gaps
 
 If counts are inconclusive, say so explicitly.
+Common refactor-proof target: prove a rewritten formula or action is equivalent to the original, rather than only model-checking `F <=> G` with TLC.
 
 ## Resources
 

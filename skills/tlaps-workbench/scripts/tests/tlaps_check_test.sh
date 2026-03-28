@@ -80,6 +80,25 @@ run_case() {
   RUN_SUMMARY="$(summary_for_case "$case_root")"
 }
 
+run_real_case() {
+  local case_name="$1"
+  local module_name="$2"
+  local module_body="$3"
+  local case_root="$runs_dir/$case_name"
+  local spec_dir="$tmp_root/$case_name-spec"
+  mkdir -p "$case_root" "$spec_dir"
+
+  spec_path="$spec_dir/$module_name.tla"
+  printf '%s\n' "$module_body" >"$spec_path"
+
+  set +e
+  "$runner" --spec "$spec_path" --out-root "$case_root" >/dev/null 2>&1
+  RUN_EXIT=$?
+  set -e
+
+  RUN_SUMMARY="$(summary_for_case "$case_root")"
+}
+
 wrapper_pass="$wrappers_dir/pass.sh"
 cat >"$wrapper_pass" <<'EOF_WRAPPER_PASS'
 #!/usr/bin/env bash
@@ -184,6 +203,46 @@ fi
 sleep 1
 if kill -0 "$child_pid" 2>/dev/null; then
   fail "timeout case child process still alive after timeout cleanup"
+fi
+
+if command -v tlapm >/dev/null 2>&1; then
+  # Case 6: real tlapm pass output should produce trustworthy counts.
+  run_real_case \
+    real_tlapm_equiv_pass \
+    FormulaEquiv \
+'---- MODULE FormulaEquiv ----
+F == TRUE /\ TRUE
+G == TRUE
+
+THEOREM FormulaEquiv == F <=> G
+BY DEF F, G
+===='
+  assert_eq "0" "$RUN_EXIT" "real tlapm pass exit code"
+  assert_json_eq "pass" '.status' "$RUN_SUMMARY" "real tlapm pass status"
+  assert_json_eq "1" '.proof_obligation_counts.total' "$RUN_SUMMARY" "real tlapm pass total"
+  assert_json_eq "1" '.proof_obligation_counts.proved' "$RUN_SUMMARY" "real tlapm pass proved"
+  assert_json_eq "0" '.proof_obligation_counts.failed' "$RUN_SUMMARY" "real tlapm pass failed"
+  assert_json_eq "0" '.proof_obligation_counts.omitted' "$RUN_SUMMARY" "real tlapm pass omitted"
+  assert_json_eq "0" '.proof_obligation_counts.unknown' "$RUN_SUMMARY" "real tlapm pass unknown"
+
+  # Case 7: real tlapm fail output should produce trustworthy counts.
+  run_real_case \
+    real_tlapm_equiv_fail \
+    FormulaEquivFail \
+'---- MODULE FormulaEquivFail ----
+F == TRUE
+G == FALSE
+
+THEOREM FormulaEquivFail == F <=> G
+BY DEF F, G
+===='
+  assert_eq "3" "$RUN_EXIT" "real tlapm fail exit code"
+  assert_json_eq "fail" '.status' "$RUN_SUMMARY" "real tlapm fail status"
+  assert_json_eq "1" '.proof_obligation_counts.total' "$RUN_SUMMARY" "real tlapm fail total"
+  assert_json_eq "0" '.proof_obligation_counts.proved' "$RUN_SUMMARY" "real tlapm fail proved"
+  assert_json_eq "1" '.proof_obligation_counts.failed' "$RUN_SUMMARY" "real tlapm fail failed"
+  assert_json_eq "0" '.proof_obligation_counts.omitted' "$RUN_SUMMARY" "real tlapm fail omitted"
+  assert_json_eq "0" '.proof_obligation_counts.unknown' "$RUN_SUMMARY" "real tlapm fail unknown"
 fi
 
 printf 'PASS: tlaps_check.sh regression tests\n'
