@@ -228,6 +228,45 @@ extract_count_for_keywords() {
   fi
 }
 
+parse_real_tlapm_summary_line() {
+  local line="$1"
+
+  if [[ "$line" =~ all[[:space:]]+([0-9]+)[[:space:]]+obligations?[[:space:]]+proved\.?$ ]]; then
+    COUNT_TOTAL="${BASH_REMATCH[1]}"
+    COUNT_PROVED="${BASH_REMATCH[1]}"
+    COUNT_FAILED="0"
+    COUNT_OMITTED="0"
+    COUNT_UNKNOWN="0"
+    return 0
+  fi
+
+  if [[ "$line" =~ ([0-9]+)[[:space:]]*/[[:space:]]*([0-9]+)[[:space:]]+obligations?[[:space:]]+failed\.?$ ]]; then
+    local failed_count="${BASH_REMATCH[1]}"
+    local total_count="${BASH_REMATCH[2]}"
+    local proved_count=0
+
+    if (( failed_count > total_count )); then
+      append_note "Parsed failed obligations exceeded parsed total obligations; leaving counts as null."
+      COUNT_TOTAL=""
+      COUNT_PROVED=""
+      COUNT_FAILED=""
+      COUNT_OMITTED=""
+      COUNT_UNKNOWN=""
+      return 0
+    fi
+
+    proved_count=$((total_count - failed_count))
+    COUNT_TOTAL="$total_count"
+    COUNT_PROVED="$proved_count"
+    COUNT_FAILED="$failed_count"
+    COUNT_OMITTED="0"
+    COUNT_UNKNOWN="0"
+    return 0
+  fi
+
+  return 1
+}
+
 build_excerpt_json() {
   local path="$1"
   local max_lines="$2"
@@ -284,6 +323,10 @@ parse_counts() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     line_no=$((line_no + 1))
     lower_line="$(printf '%s\n' "$line" | tr '[:upper:]' '[:lower:]')"
+
+    if parse_real_tlapm_summary_line "$lower_line"; then
+      return
+    fi
 
     total="$(extract_count_for_keywords "$lower_line" 'total|obligations?')"
     proved="$(extract_count_for_keywords "$lower_line" 'proved|discharged|checked')"

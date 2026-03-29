@@ -42,6 +42,7 @@ Start with the smallest stable structure:
 
 Prefer explicit sub-lemmas over long single-step `BY` clauses.
 Use `BY DEF ...` only for required definitions.
+Formula-equivalence proofs for refactors are a supported pattern, for example `THEOREM F <=> G BY DEF F, G`.
 Match the structure to the proof class:
 - inductive invariant/safety: isolate base case vs step case and split `Next` by action
 - refinement: state the abstraction relation/refinement mapping and prove init/step obligations separately
@@ -89,6 +90,7 @@ Report:
 - remaining proof gaps
 
 If counts are inconclusive, say so explicitly.
+Common refactor-proof target: prove a rewritten formula or action is equivalent to the original, rather than only model-checking `F <=> G` with TLC.
 
 ## Resources
 
