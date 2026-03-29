@@ -12,14 +12,17 @@ Use this guide after structural proof cleanup.
 ## What to Prefer
 
 - Prefer local proof decomposition over global backend tuning.
+- Prefer strengthening invariants/helper lemmas over repeatedly enlarging opaque `BY` clauses.
 - Prefer explicit fact flow (`HAVE`, `SUFFICES`, labeled steps) over large `BY` lists.
 - Prefer narrow definition expansion over broad expansion.
+- Prefer citing imported theorems explicitly when a community/library result already matches the subgoal.
 
 ## When to Consider Backend Changes
 
 - Arithmetic-heavy subgoal persists after decomposition.
 - Set/function extensionality style obligations remain isolated.
 - One obligation class fails repeatedly while others are stable.
+- The proof structure is now stable and the remaining blocker is genuinely backend-shaped rather than an induction gap.
 
 ## Minimal Operational Guidance
 

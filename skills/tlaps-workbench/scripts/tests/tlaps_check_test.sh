@@ -127,6 +127,26 @@ exit 1
 EOF_WRAPPER_PROGRESS
 chmod +x "$wrapper_progress_only"
 
+wrapper_real_tlapm_style="$wrappers_dir/real_tlapm_style.sh"
+cat >"$wrapper_real_tlapm_style" <<'EOF_WRAPPER_REAL_TLAPM'
+#!/usr/bin/env bash
+set -euo pipefail
+echo '(* created new ".tlacache/Trivial.tlaps/Trivial.thy" *)'
+echo '[INFO]: All 1 obligation proved.' >&2
+exit 0
+EOF_WRAPPER_REAL_TLAPM
+chmod +x "$wrapper_real_tlapm_style"
+
+wrapper_real_tlapm_fail_style="$wrappers_dir/real_tlapm_fail_style.sh"
+cat >"$wrapper_real_tlapm_fail_style" <<'EOF_WRAPPER_REAL_TLAPM_FAIL'
+#!/usr/bin/env bash
+set -euo pipefail
+echo 'Zenon error: exhausted search space without finding a proof'
+echo '[ERROR]: 1/1 obligation failed.' >&2
+exit 3
+EOF_WRAPPER_REAL_TLAPM_FAIL
+chmod +x "$wrapper_real_tlapm_fail_style"
+
 wrapper_timeout_child="$wrappers_dir/timeout_child.sh"
 cat >"$wrapper_timeout_child" <<'EOF_WRAPPER_TIMEOUT'
 #!/usr/bin/env bash
@@ -179,7 +199,27 @@ assert_eq "2" "$RUN_EXIT" "missing tlapm exit code"
 assert_json_eq "error" '.status' "$RUN_SUMMARY" "missing tlapm status"
 assert_json_eq "2" '.exit_code' "$RUN_SUMMARY" "missing tlapm summary exit code"
 
-# Case 5: timeout should terminate descendants too.
+# Case 5: parse TLAPM's real "All N obligation proved" summary style from stderr.
+run_case real_tlapm_style --tlapm "$wrapper_real_tlapm_style"
+assert_eq "0" "$RUN_EXIT" "real tlapm style exit code"
+assert_json_eq "pass" '.status' "$RUN_SUMMARY" "real tlapm style status"
+assert_json_eq "1" '.proof_obligation_counts.total' "$RUN_SUMMARY" "real tlapm style total"
+assert_json_eq "1" '.proof_obligation_counts.proved' "$RUN_SUMMARY" "real tlapm style proved"
+assert_json_eq "0" '.proof_obligation_counts.failed' "$RUN_SUMMARY" "real tlapm style failed"
+assert_json_eq "0" '.proof_obligation_counts.omitted' "$RUN_SUMMARY" "real tlapm style omitted"
+assert_json_eq "0" '.proof_obligation_counts.unknown' "$RUN_SUMMARY" "real tlapm style unknown"
+
+# Case 6: parse TLAPM's real "N/N obligation failed" summary style from stderr.
+run_case real_tlapm_fail_style --tlapm "$wrapper_real_tlapm_fail_style"
+assert_eq "3" "$RUN_EXIT" "real tlapm fail style exit code"
+assert_json_eq "fail" '.status' "$RUN_SUMMARY" "real tlapm fail style status"
+assert_json_eq "1" '.proof_obligation_counts.total' "$RUN_SUMMARY" "real tlapm fail style total"
+assert_json_eq "0" '.proof_obligation_counts.proved' "$RUN_SUMMARY" "real tlapm fail style proved"
+assert_json_eq "1" '.proof_obligation_counts.failed' "$RUN_SUMMARY" "real tlapm fail style failed"
+assert_json_eq "0" '.proof_obligation_counts.omitted' "$RUN_SUMMARY" "real tlapm fail style omitted"
+assert_json_eq "0" '.proof_obligation_counts.unknown' "$RUN_SUMMARY" "real tlapm fail style unknown"
+
+# Case 7: timeout should terminate descendants too.
 case_root="$runs_dir/timeout"
 mkdir -p "$case_root"
 child_pid_file="$tmp_root/timeout-child.pid"
