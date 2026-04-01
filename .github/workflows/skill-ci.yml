@@ -7,8 +7,8 @@ on:
       - main
 
 jobs:
-  tlaps-workbench:
-    name: TLAPS Workbench Script Tests
+  tla-proof:
+    name: TLA Proof Script Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -24,10 +24,10 @@ jobs:
       - name: Shell syntax checks
         run: |
           set -euo pipefail
-          bash -n skills/tlaps-workbench/scripts/tlaps_check.sh
-          bash -n skills/tlaps-workbench/scripts/tests/tlaps_check_test.sh
+          bash -n skills/tla-proof/scripts/tlaps_check.sh
+          bash -n skills/tla-proof/scripts/tests/tlaps_check_test.sh
 
       - name: Run TLAPS runner regression tests
         run: |
           set -euo pipefail
-          bash skills/tlaps-workbench/scripts/tests/tlaps_check_test.sh
+          bash skills/tla-proof/scripts/tests/tlaps_check_test.sh

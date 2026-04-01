@@ -1,0 +1,4 @@
+interface:
+  display_name: "TLA+ Proof"
+  short_description: "Write and debug TLA+ proofs with TLAPS"
+  default_prompt: "Use $tla-proof to build or fix hierarchical TLA+ proofs, run TLAPS, and summarize proved versus unproved obligations with assumptions."

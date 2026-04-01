@@ -1,0 +1,8 @@
+{
+  "name": "tla-workbenches",
+  "version": "0.1.0",
+  "description": "TLA+ workbench skills for TLC model checking and TLAPS proofs.",
+  "author": {
+    "name": "younes-io"
+  }
+}

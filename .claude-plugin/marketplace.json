@@ -1,0 +1,21 @@
+{
+  "name": "younes-agent-skills",
+  "owner": {
+    "name": "younes-io"
+  },
+  "metadata": {
+    "description": "Portable TLA+ agent skills for Claude Code and other Agent Skills clients.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "tla-workbenches",
+      "description": "TLA+ workbench skills for TLC model checking and TLAPS proofs.",
+      "version": "0.1.0",
+      "author": {
+        "name": "younes-io"
+      },
+      "source": "./plugins/tla-workbenches"
+    }
+  ]
+}

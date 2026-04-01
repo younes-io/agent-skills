@@ -17,7 +17,7 @@ Options:
   --java BIN            Java executable (default: java)
   --workers N           TLC workers (default: 1)
   --timeout-secs N      Kill TLC after N seconds (default: 0 = no timeout)
-  --out-root PATH       Run artifact root (default: <spec-dir>/.tlaplus-workbench/runs)
+  --out-root PATH       Run artifact root (default: <spec-dir>/.tla-check/runs)
   --trace-max-steps N   Max trace steps in counterexample summary (default: 50)
   -h, --help            Show this help
 EOF
@@ -302,7 +302,7 @@ fi
 if [[ -n "$OUT_ROOT" ]]; then
   out_root="$(abs_maybe_missing "$OUT_ROOT")"
 else
-  out_root="$spec_dir/.tlaplus-workbench/runs"
+  out_root="$spec_dir/.tla-check/runs"
 fi
 
 mkdir -p "$out_root"

@@ -1,4 +1,0 @@
-interface:
-  display_name: "TLAPS Workbench"
-  short_description: "Write and debug TLA+ proofs with TLAPS"
-  default_prompt: "Use $tlaps-workbench to build or fix hierarchical TLA+ proofs, run TLAPS, and summarize proved vs unproved obligations with assumptions."

@@ -1,14 +1,14 @@
 ---
-name: tlaps-workbench
-description: "Write and iteratively refine TLA+ theorem proofs in `.tla` modules with TLAPS (`tlapm`); run proof checks and summarize proved vs failed/omitted obligations with explicit assumptions and trust boundaries. Use when asked to create/fix `THEOREM` or `PROOF` blocks, diagnose TLAPS failures, strengthen inductive invariants, prove formula/refinement equivalence, tune proof decomposition/tactics/backends, or report theorem-proving progress."
+name: tla-proof
+description: "Write and iteratively refine TLA+ theorem proofs in `.tla` modules with TLAPS (`tlapm`); run proof checks and summarize proved vs failed/omitted obligations with explicit assumptions and trust boundaries. Use when asked to create or fix `THEOREM` or `PROOF` blocks, diagnose TLAPS failures, strengthen inductive invariants, prove equivalence, or tune proof structure."
 ---
 
-# TLAPS Workbench
+# TLA+ Proof
 
 ## Outputs
 
 - Updated proof-bearing TLA+ module(s): `*.tla`
-- TLAPS run artifacts: `.tlaps-workbench/runs/<run-id>/...`
+- TLAPS run artifacts: `.tla-proof/runs/<run-id>/...`
 
 ## Non-Negotiables (Honesty Rules)
 
@@ -63,9 +63,9 @@ scripts/tlaps_check.sh --spec path/to/Foo.tla
 ```
 
 Artifacts:
-- `.tlaps-workbench/runs/<run-id>/summary.json`
-- `.tlaps-workbench/runs/<run-id>/tlaps.stdout`
-- `.tlaps-workbench/runs/<run-id>/tlaps.stderr`
+- `.tla-proof/runs/<run-id>/summary.json`
+- `.tla-proof/runs/<run-id>/tlaps.stdout`
+- `.tla-proof/runs/<run-id>/tlaps.stderr`
 
 ### 4) Triage Failing Obligations
 
