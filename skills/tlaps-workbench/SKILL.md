@@ -38,7 +38,7 @@ If the user is refactoring a spec and wants semantic preservation, consider a di
 Start with the smallest stable structure:
 - `THEOREM ...`
 - `PROOF`
-- `SUFFICES`, `HAVE`, `CASE`, `PICK`, `QED` as needed
+- `SUFFICES`, `HAVE`, `CASE`, `PICK`, `TAKE`, `WITNESS`, `QED` as needed
 
 Prefer explicit sub-lemmas over long single-step `BY` clauses.
 Use `BY DEF ...` only for required definitions.
@@ -101,6 +101,7 @@ Common refactor-proof target: prove a rewritten formula or action is equivalent 
 ### references/
 
 - `references/proof_skeleton.md`: minimal hierarchical proof templates
+- `references/local_moves.md`: TLAPS-specific logical moves and proof-shape defaults
 - `references/proof_debugging.md`: failure taxonomy and remediation playbook
 - `references/tactics_quickref.md`: tactic/backend guidance and escalation order
 - `references/case_bank.md`: discussion-derived proof classes and non-trivial example ideas
