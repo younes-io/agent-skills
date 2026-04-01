@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Portable TLA+ agent skills for Claude Code and other Agent Skills clients.",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "plugins": [
     {
       "name": "tla-workbenches",
-      "description": "TLA+ workbench skills for TLC model checking and TLAPS proofs.",
-      "version": "0.1.0",
+      "description": "TLA+ skills for checking specs and writing proofs.",
+      "version": "0.1.1",
       "author": {
         "name": "younes-io"
       },
