@@ -6,7 +6,9 @@ proof before you reach for stronger tactics or backend changes.
 ## Goal-Side Moves
 
 - Goal `P /\ Q`: split into separate subgoals and prove each conjunct.
-- Goal `P \/ Q`: prove one disjunct explicitly and close the disjunction.
+- Goal `P \/ Q`: close the disjunction by proving one disjunct explicitly; in
+  some branches, assumptions that rule out the other disjunct may guide which
+  side to prove.
 - Goal `P => Q`: switch to `ASSUME P PROVE Q`, often via `SUFFICES`.
 - Goal `\A x : P(x)` or `\A x \in S : P(x)`: `TAKE` an arbitrary witness and
   prove the body.
