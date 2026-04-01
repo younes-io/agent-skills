@@ -1,15 +1,15 @@
 ---
-name: tlaplus-workbench
-description: "Write and iteratively refine executable TLA+ specs (.tla) and TLC model configs (.cfg) from natural-language system designs; run TLC model checking; summarize pass/fail and counterexamples with explicit assumptions and bounds. Use when asked to: design/validate a state machine or distributed protocol with TLA+, create/edit .tla or .cfg files, run TLC, or interpret TLC failures/counterexamples."
+name: tla-check
+description: "Write and iteratively refine executable TLA+ specs (.tla) and TLC model configs (.cfg) from natural-language system designs; run TLC model checking; summarize pass/fail and counterexamples with explicit assumptions and bounds. Use when asked to design or validate a protocol/state machine, create or edit .tla/.cfg files, run TLC, or interpret TLC failures."
 ---
 
-# TLA+ Workbench
+# TLA+ Check
 
 ## Outputs
 
 - TLA+ spec(s): `*.tla`
 - TLC config(s): `*.cfg`
-- TLC run artifacts: `.tlaplus-workbench/runs/<run-id>/...` (logs, json trace if any)
+- TLC run artifacts: `.tla-check/runs/<run-id>/...` (logs, json trace if any)
 
 ## Non-Negotiables (Honesty Rules)
 
@@ -97,17 +97,17 @@ Prereqs:
 - `jq` on PATH
 - `tla2tools.jar` available and pointed to by `TLA2TOOLS_JAR` (or pass `--jar`)
 
-Run (from the `tlaplus-workbench` skill directory):
+Run (from the `tla-check` skill directory):
 
 ```bash
 scripts/tlc_check.sh --spec path/to/Foo.tla --cfg path/to/Foo.cfg
 ```
 
 This writes a run directory under the spec folder:
-- `.tlaplus-workbench/runs/<run-id>/summary.json`
-- `.tlaplus-workbench/runs/<run-id>/tlc.stdout`
-- `.tlaplus-workbench/runs/<run-id>/tlc.stderr`
-- `.tlaplus-workbench/runs/<run-id>/counterexample.json` (only if TLC produced one)
+- `.tla-check/runs/<run-id>/summary.json`
+- `.tla-check/runs/<run-id>/tlc.stdout`
+- `.tla-check/runs/<run-id>/tlc.stderr`
+- `.tla-check/runs/<run-id>/counterexample.json` (only if TLC produced one)
 
 ### 5) Iterate (Tight Loop)
 

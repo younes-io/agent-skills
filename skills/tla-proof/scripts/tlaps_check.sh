@@ -14,7 +14,7 @@ Options:
   --spec PATH          Path to root .tla module (required)
   --tlapm BIN          tlapm executable or absolute path (default: tlapm)
   --timeout-secs N     Kill tlapm after N seconds (default: 0 = no timeout)
-  --out-root PATH      Run artifact root (default: <spec-dir>/.tlaps-workbench/runs)
+  --out-root PATH      Run artifact root (default: <spec-dir>/.tla-proof/runs)
   --max-lines N        Max stdout/stderr lines to keep in summary excerpts (default: 200)
   -h, --help           Show this help
 EOF
@@ -568,7 +568,7 @@ spec_file="$(basename "$spec_path")"
 if [[ -n "$OUT_ROOT" ]]; then
   out_root="$(abs_maybe_missing "$OUT_ROOT")"
 else
-  out_root="$spec_dir/.tlaps-workbench/runs"
+  out_root="$spec_dir/.tla-proof/runs"
 fi
 
 mkdir -p "$out_root"

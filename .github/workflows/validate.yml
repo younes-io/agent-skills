@@ -1,0 +1,28 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate portable skill pack
+        run: npx -y skills add . --list
+
+      - name: Sync generated Claude plugin skills
+        run: ./scripts/sync_claude_plugin_skills.sh
+
+      - name: Check generated plugin skills are committed
+        run: git diff --exit-code -- plugins/tla-workbenches/skills
+
+      - name: Validate Claude plugin metadata and generated skills
+        run: ./scripts/validate_claude_plugin.sh
