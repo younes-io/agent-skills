@@ -32,8 +32,8 @@ expected_marketplace = {
     "owner_name": "younes-io",
     "plugin_name": "tla-workbenches",
     "plugin_source": "./plugins/tla-workbenches",
-    "plugin_version": "0.1.1",
-    "skills": ["./skills/tla-check", "./skills/tla-proof"],
+    "plugin_version": "0.1.2",
+    "skills": "./skills/",
 }
 
 if marketplace.get("name") != expected_marketplace["name"]:
@@ -66,7 +66,7 @@ if plugin.get("version") != expected_marketplace["plugin_version"]:
     raise SystemExit("Unexpected plugin manifest version")
 
 if plugin.get("skills") != expected_marketplace["skills"]:
-    raise SystemExit("Plugin manifest must register tla-check and tla-proof")
+    raise SystemExit("Plugin manifest must register the ./skills/ directory")
 PY
 
 if find "$generated_skills" -type l | grep -q .; then
