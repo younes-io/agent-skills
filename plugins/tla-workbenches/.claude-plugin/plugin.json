@@ -1,8 +1,14 @@
 {
   "name": "tla-workbenches",
-  "version": "0.1.0",
-  "description": "TLA+ workbench skills for TLC model checking and TLAPS proofs.",
+  "version": "0.1.1",
+  "description": "TLA+ skills for checking specs and writing proofs.",
   "author": {
     "name": "younes-io"
-  }
+  },
+  "repository": "https://github.com/younes-io/agent-skills",
+  "homepage": "https://github.com/younes-io/agent-skills/tree/main/plugins/tla-workbenches",
+  "skills": [
+    "./skills/tla-check",
+    "./skills/tla-proof"
+  ]
 }
