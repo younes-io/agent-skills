@@ -1,0 +1,115 @@
+name: Release On Version Change
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Detect VERSION changes in this push
+        id: version_change
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            changed="true"
+          elif git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- VERSION; then
+            changed="false"
+          else
+            changed="true"
+          fi
+
+          version="$(./scripts/read_version.sh)"
+
+          {
+            echo "changed=$changed"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Stop when VERSION was not changed
+        if: steps.version_change.outputs.changed != 'true'
+        run: |
+          echo "VERSION did not change in this push; skipping release."
+
+      - name: Configure git identity
+        if: steps.version_change.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync manifests and generated files
+        if: steps.version_change.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          ./scripts/sync_version.sh
+          ./scripts/sync_claude_plugin_skills.sh
+
+      - name: Validate release state
+        if: steps.version_change.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          npx -y skills add . --list
+          ./scripts/tests/version_sync_test.sh
+          git diff --exit-code -- plugins/tla-workbenches/skills
+          ./scripts/validate_claude_plugin.sh
+
+      - name: Commit synced metadata if needed
+        if: steps.version_change.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json; then
+            echo "No manifest sync commit needed."
+            exit 0
+          fi
+
+          git add .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json
+          git commit -m "chore(release): sync metadata for v${{ steps.version_change.outputs.version }}"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        if: steps.version_change.outputs.changed == 'true'
+        env:
+          TAG_NAME: v${{ steps.version_change.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force origin
+
+          if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q .; then
+            echo "Tag already exists on origin: ${TAG_NAME}" >&2
+            exit 1
+          fi
+
+          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
+          git push origin "refs/tags/${TAG_NAME}"
+
+      - name: Create GitHub release
+        if: steps.version_change.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: v${{ steps.version_change.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "${TAG_NAME}" \
+            --title "${TAG_NAME}" \
+            --generate-notes
