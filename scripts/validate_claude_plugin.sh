@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 marketplace_json="$repo_root/.claude-plugin/marketplace.json"
 plugin_root="$repo_root/plugins/tla-workbenches"
 plugin_json="$plugin_root/.claude-plugin/plugin.json"
 source_skills="$repo_root/skills"
 generated_skills="$plugin_root/skills"
+version="$("$repo_root/scripts/read_version.sh")"
 
 for required_path in "$marketplace_json" "$plugin_json" "$source_skills" "$generated_skills"; do
   if [[ ! -e "$required_path" ]]; then
@@ -15,11 +16,11 @@ for required_path in "$marketplace_json" "$plugin_json" "$source_skills" "$gener
   fi
 done
 
-python3 - "$marketplace_json" "$plugin_json" <<'PY'
+python3 - "$marketplace_json" "$plugin_json" "$version" <<'PY'
 import json
 import sys
 
-marketplace_path, plugin_path = sys.argv[1:3]
+marketplace_path, plugin_path, expected_version = sys.argv[1:4]
 
 with open(marketplace_path, "r", encoding="utf-8") as f:
     marketplace = json.load(f)
@@ -32,7 +33,7 @@ expected_marketplace = {
     "owner_name": "younes-io",
     "plugin_name": "tla-workbenches",
     "plugin_source": "./plugins/tla-workbenches",
-    "plugin_version": "0.1.2",
+    "plugin_version": expected_version,
     "skills": "./skills/",
 }
 

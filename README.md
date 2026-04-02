@@ -75,6 +75,19 @@ Claude-specific wrapper files live under:
 
 The root `skills/` directory is the only editable source of skill content. The Claude plugin `skills/` tree is generated from it and committed for GitHub-based Claude Code installs.
 
+## Releases
+
+`VERSION` is the single release source of truth.
+
+When a change to `VERSION` reaches `main`, GitHub Actions will:
+
+- sync the release version into the Claude plugin manifests
+- validate the repo state
+- create and push the matching Git tag (`vX.Y.Z`)
+- create the matching GitHub Release
+
+Normal content changes do not create a release unless `VERSION` changed in that push.
+
 ## tla-check prerequisites
 
 See `skills/tla-check/SKILL.md` for full usage.

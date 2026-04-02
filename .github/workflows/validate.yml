@@ -15,8 +15,23 @@ jobs:
         with:
           node-version: 20
 
+      - name: Shell syntax checks
+        run: |
+          set -euo pipefail
+          bash -n scripts/read_version.sh
+          bash -n scripts/sync_version.sh
+          bash -n scripts/sync_claude_plugin_skills.sh
+          bash -n scripts/validate_claude_plugin.sh
+          bash -n scripts/tests/version_sync_test.sh
+
       - name: Validate portable skill pack
         run: npx -y skills add . --list
+
+      - name: Run version sync regression test
+        run: ./scripts/tests/version_sync_test.sh
+
+      - name: Sync release version into manifests
+        run: ./scripts/sync_version.sh
 
       - name: Sync generated Claude plugin skills
         run: ./scripts/sync_claude_plugin_skills.sh

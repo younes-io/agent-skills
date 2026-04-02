@@ -1,6 +1,6 @@
 {
   "name": "tla-workbenches",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "description": "TLA+ skills for checking specs and writing proofs.",
   "author": {
     "name": "younes-io"
