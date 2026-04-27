@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ignore local runner file mode noise
+        run: git config core.fileMode false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -22,6 +25,7 @@ jobs:
           bash -n scripts/sync_version.sh
           bash -n scripts/sync_claude_plugin_skills.sh
           bash -n scripts/validate_claude_plugin.sh
+          bash -n scripts/validate_codex_plugin.sh
           bash -n scripts/tests/version_sync_test.sh
 
       - name: Validate portable skill pack
@@ -41,3 +45,6 @@ jobs:
 
       - name: Validate Claude plugin metadata and generated skills
         run: ./scripts/validate_claude_plugin.sh
+
+      - name: Validate Codex plugin metadata and generated skills
+        run: ./scripts/validate_codex_plugin.sh

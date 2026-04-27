@@ -1,0 +1,45 @@
+{
+  "name": "tla-workbenches",
+  "version": "0.1.6",
+  "description": "TLA+ skills for checking specs and writing proofs.",
+  "author": {
+    "name": "younes-io",
+    "url": "https://github.com/younes-io"
+  },
+  "homepage": "https://github.com/younes-io/agent-skills/tree/main/plugins/tla-workbenches",
+  "repository": "https://github.com/younes-io/agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "tla-plus",
+    "tlc",
+    "tlaps",
+    "formal-methods",
+    "model-checking",
+    "proofs"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "TLA+ Workbenches",
+    "shortDescription": "Check TLA+ specs and debug TLAPS proofs.",
+    "longDescription": "Draft and refine executable TLA+ specs, run TLC model checking, inspect counterexamples, write TLAPS proofs, and summarize assumptions, bounds, and proof obligations.",
+    "developerName": "younes-io",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/younes-io/agent-skills",
+    "privacyPolicyURL": "https://github.com/younes-io/agent-skills/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/younes-io/agent-skills/blob/main/TERMS.md",
+    "defaultPrompt": [
+      "Use $tla-check to model-check this design.",
+      "Use $tla-proof to debug this TLAPS proof.",
+      "Create a small TLA+ spec and TLC model."
+    ],
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/tla-workbenches.svg",
+    "logo": "./assets/tla-workbenches.svg",
+    "screenshots": []
+  }
+}

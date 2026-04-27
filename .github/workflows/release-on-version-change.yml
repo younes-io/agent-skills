@@ -18,6 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ignore local runner file mode noise
+        run: git config core.fileMode false
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -51,7 +54,7 @@ jobs:
           echo "VERSION did not change in this push; skipping release."
 
       - name: Configure git identity
-        if: steps.version_change.outputs.changed == 'true'
+        if: steps.version_change.outputs.changed == 'true' && github.server_url == 'https://github.com'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -71,45 +74,65 @@ jobs:
           ./scripts/tests/version_sync_test.sh
           git diff --exit-code -- plugins/tla-workbenches/skills
           ./scripts/validate_claude_plugin.sh
+          ./scripts/validate_codex_plugin.sh
 
       - name: Commit synced metadata if needed
-        if: steps.version_change.outputs.changed == 'true'
+        if: steps.version_change.outputs.changed == 'true' && github.server_url == 'https://github.com'
         run: |
           set -euo pipefail
+          if [[ "${AGENT_CI_LOCAL:-}" == "true" ]]; then
+            echo "Agent CI local run; skipping release metadata commit."
+            exit 0
+          fi
 
-          if git diff --quiet -- .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json; then
+          version="$(./scripts/read_version.sh)"
+
+          if git diff --quiet -- .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json plugins/tla-workbenches/.codex-plugin/plugin.json; then
             echo "No manifest sync commit needed."
             exit 0
           fi
 
-          git add .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json
-          git commit -m "chore(release): sync metadata for v${{ steps.version_change.outputs.version }}"
+          git add .claude-plugin/marketplace.json plugins/tla-workbenches/.claude-plugin/plugin.json plugins/tla-workbenches/.codex-plugin/plugin.json
+          git commit -m "chore(release): sync metadata for v${version}"
           git push origin HEAD:main
 
       - name: Create and push tag
-        if: steps.version_change.outputs.changed == 'true'
-        env:
-          TAG_NAME: v${{ steps.version_change.outputs.version }}
+        id: release_tag
+        if: steps.version_change.outputs.changed == 'true' && github.server_url == 'https://github.com'
         run: |
           set -euo pipefail
+          if [[ "${AGENT_CI_LOCAL:-}" == "true" ]]; then
+            echo "Agent CI local run; skipping release tag publish."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          tag_name="v$(./scripts/read_version.sh)"
 
           git fetch --tags --force origin
 
-          if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q .; then
-            echo "Tag already exists on origin: ${TAG_NAME}" >&2
-            exit 1
+          if git ls-remote --tags origin "refs/tags/${tag_name}" | grep -q .; then
+            echo "Tag already exists on origin: ${tag_name}; skipping release publish."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
-          git push origin "refs/tags/${TAG_NAME}"
+          git tag -a "${tag_name}" -m "Release ${tag_name}"
+          git push origin "refs/tags/${tag_name}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
-        if: steps.version_change.outputs.changed == 'true'
+        if: steps.release_tag.outputs.created == 'true' && github.server_url == 'https://github.com'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v${{ steps.version_change.outputs.version }}
         run: |
           set -euo pipefail
+          if [[ "${AGENT_CI_LOCAL:-}" == "true" ]]; then
+            echo "Agent CI local run; skipping GitHub release publish."
+            exit 0
+          fi
+
+          TAG_NAME="v$(./scripts/read_version.sh)"
           gh release create "${TAG_NAME}" \
             --title "${TAG_NAME}" \
             --generate-notes

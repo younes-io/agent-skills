@@ -13,9 +13,12 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 2
 fi
 
-tmp_root="$(mktemp -d "${TMPDIR:-/tmp}/tlaps-check-test.XXXXXX")"
+tmp_parent="${TLAPS_CHECK_TEST_TMPDIR:-$script_dir/../../../../.tmp-tlaps-check-test}"
+mkdir -p "$tmp_parent"
+tmp_root="$(mktemp -d "$tmp_parent/run.XXXXXX")"
 cleanup() {
   rm -rf "$tmp_root"
+  rmdir "$tmp_parent" 2>/dev/null || true
 }
 trap cleanup EXIT
 

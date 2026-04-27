@@ -1,6 +1,6 @@
 # younes-io/agent-skills
 
-A portable Agent Skills repo for TLA+ workbenches, with a generated Claude Code plugin wrapper.
+A portable Agent Skills repo for TLA+ workbenches, with generated Claude Code and Codex plugin wrappers.
 
 ## Skills
 
@@ -56,6 +56,35 @@ Invoke the plugin-qualified skills:
 /tla-workbenches:tla-proof
 ```
 
+## Codex Plugin Install
+
+This repo also ships a Codex-native plugin wrapper.
+
+For a local checkout, add this repo's marketplace file in Codex:
+
+```text
+.agents/plugins/marketplace.json
+```
+
+The Codex marketplace entry points at:
+
+```text
+plugins/tla-workbenches
+```
+
+The Codex plugin manifest lives at:
+
+```text
+plugins/tla-workbenches/.codex-plugin/plugin.json
+```
+
+Once installed, invoke the skills from Codex with:
+
+```text
+$tla-check
+$tla-proof
+```
+
 ## Repo layout
 
 Skills live under:
@@ -73,7 +102,14 @@ Claude-specific wrapper files live under:
 - `scripts/sync_claude_plugin_skills.sh`
 - `scripts/validate_claude_plugin.sh`
 
-The root `skills/` directory is the only editable source of skill content. The Claude plugin `skills/` tree is generated from it and committed for GitHub-based Claude Code installs.
+Codex-specific wrapper files live under:
+
+- `.agents/plugins/marketplace.json`
+- `plugins/tla-workbenches/.codex-plugin/plugin.json`
+- `plugins/tla-workbenches/assets/`
+- `scripts/validate_codex_plugin.sh`
+
+The root `skills/` directory is the only editable source of skill content. The plugin `skills/` tree is generated from it and committed for GitHub-based Claude Code and Codex installs.
 
 ## Releases
 
@@ -81,7 +117,7 @@ The root `skills/` directory is the only editable source of skill content. The C
 
 When a change to `VERSION` reaches `main`, GitHub Actions will:
 
-- sync the release version into the Claude plugin manifests
+- sync the release version into the Claude and Codex plugin manifests
 - validate the repo state
 - create and push the matching Git tag (`vX.Y.Z`)
 - create the matching GitHub Release
