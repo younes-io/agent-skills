@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">TLA+ Workbenches</title>
+  <desc id="desc">A blue icon with TLA+ initials and proof check marks.</desc>
+  <rect width="256" height="256" rx="44" fill="#0F172A"/>
+  <path d="M40 66h176v124H40z" fill="#1D4ED8"/>
+  <path d="M58 88h140M58 118h88M58 148h112" stroke="#DBEAFE" stroke-width="12" stroke-linecap="round"/>
+  <path d="M165 138l16 16 34-42" fill="none" stroke="#A7F3D0" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="52" y="54" fill="#EFF6FF" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">TLA+</text>
+</svg>
