@@ -158,6 +158,133 @@ quote_cmd() {
   printf '%s\n' "$out"
 }
 
+write_tool_trace() {
+  local input="$1"
+  local output="$2"
+  local tmp_output
+  local trace_filter
+
+  tmp_output="$(mktemp "${output}.tmp.XXXXXX")"
+  trace_filter='
+def capture_value($capture; $name):
+  $capture.captures[] | select(.name == $name) | .string;
+
+def parse_vars:
+  [
+    match(
+      "(?ms)^(?:/\\\\[[:space:]]+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(?<value>.*?)(?=^(?:/\\\\[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=|\\z)";
+      "g"
+    )
+    | {
+        "key": capture_value(.; "name"),
+        "value": (capture_value(.; "value") | sub("[[:space:]]+$"; ""))
+      }
+  ] | from_entries;
+
+[
+  match(
+    "(?ms)@!@!@STARTMSG 2217:[0-9]+ @!@!@\\n(?<body>.*?)@!@!@ENDMSG 2217 @!@!@";
+    "g"
+  )
+  | capture_value(.; "body")
+  | capture("(?s)^(?<num>[0-9]+): <(?<label>[^>]+)>\\n(?<vars>.*)$")
+  | {
+      "num": (.num | tonumber),
+      "label": .label,
+      "vars": (.vars | parse_vars)
+    }
+  | select((.vars | length) > 0)
+] as $parsed
+| if ($parsed | length) == 0 then
+    error("no parsable states")
+  else
+    ($parsed | map([.num, .vars])) as $states
+    | {
+        "counterexample": {
+          "state": $states,
+          "action": [
+            range(1; ($parsed | length)) as $i
+            | [
+                $states[$i - 1],
+                {
+                  "name": ($parsed[$i].label | capture("^(?<name>[^[:space:]]+)").name),
+                  "source": $parsed[$i].label
+                },
+                $states[$i]
+              ]
+          ]
+        }
+      }
+  end
+'
+
+  if jq -MRse "$trace_filter" "$input" >"$tmp_output"; then
+    mv "$tmp_output" "$output"
+    return 0
+  fi
+  rm -f "$tmp_output"
+  return 1
+}
+
+collect_descendants() {
+  local root_pid="$1"
+  local frontier
+  local descendants
+  local next_frontier
+  local pid
+  local children
+
+  frontier="$root_pid"
+  descendants=""
+  while [[ -n "$frontier" ]]; do
+    next_frontier=""
+    for pid in $frontier; do
+      children="$(
+        ps -eo pid=,ppid= 2>/dev/null | awk -v p="$pid" '$2 == p { print $1 }'
+      )"
+      if [[ -n "$children" ]]; then
+        descendants="${descendants}${descendants:+$'\n'}${children}"
+        next_frontier="${next_frontier}${next_frontier:+ }${children//$'\n'/ }"
+      fi
+    done
+    frontier="$next_frontier"
+  done
+
+  if [[ -n "$descendants" ]]; then
+    printf '%s\n' "$descendants" | awk '!seen[$0]++'
+  fi
+}
+
+terminate_process_tree() {
+  local root_pid="$1"
+  local pids
+  local descendants
+
+  descendants="$(collect_descendants "$root_pid" || true)"
+  pids=""
+  if [[ -n "$descendants" ]]; then
+    pids="${descendants//$'\n'/ }"
+  fi
+  pids="${pids}${pids:+ }${root_pid}"
+  if [[ -n "$pids" ]]; then
+    kill $pids 2>/dev/null || true
+  fi
+
+  sleep 2
+
+  descendants="$(collect_descendants "$root_pid" || true)"
+  pids=""
+  if [[ -n "$descendants" ]]; then
+    pids="${descendants//$'\n'/ }"
+  fi
+  if kill -0 "$root_pid" 2>/dev/null; then
+    pids="${pids}${pids:+ }${root_pid}"
+  fi
+  if [[ -n "$pids" ]]; then
+    kill -9 $pids 2>/dev/null || true
+  fi
+}
+
 find_tla2tools_jar() {
   local spec_dir="$1"
   local explicit="${2:-}"
@@ -339,13 +466,11 @@ cmd=(
   "-cp"
   "$jar_path"
   "tlc2.TLC"
+  "-tool"
   "-workers"
   "$WORKERS"
   "-metadir"
   "$meta_root"
-  "-dumpTrace"
-  "json"
-  "$trace_path"
   "-config"
   "$cfg_arg"
   "$module"
@@ -367,9 +492,7 @@ if (( TIMEOUT_SECS > 0 )); then
     sleep "$TIMEOUT_SECS"
     if kill -0 "$tlc_pid" 2>/dev/null; then
       : >"$timeout_flag"
-      kill "$tlc_pid" 2>/dev/null || true
-      sleep 2
-      kill -9 "$tlc_pid" 2>/dev/null || true
+      terminate_process_tree "$tlc_pid"
     fi
   ) &
   watchdog_pid=$!
@@ -398,15 +521,22 @@ duration_ms=$(( (finished_epoch - started_epoch) * 1000 ))
 
 metadir_used="$(pick_metadir "$meta_root" || true)"
 trace_exists=false
-if [[ -f "$trace_path" ]]; then
-  trace_exists=true
+trace_parse_error=false
+if grep -Fq '@!@!@STARTMSG 2217:' "$stdout_path"; then
+  if write_tool_trace "$stdout_path" "$trace_path" >/dev/null 2>&1; then
+    trace_exists=true
+  else
+    trace_parse_error=true
+  fi
 fi
 
-if [[ "$trace_exists" == true ]]; then
-  status="fail"
-elif [[ "$timed_out" == true ]]; then
+if [[ "$timed_out" == true ]]; then
   status="timeout"
-elif [[ "$exit_code" -eq 0 ]]; then
+elif [[ "$trace_exists" == true ]]; then
+  status="fail"
+elif [[ "$trace_parse_error" == true ]]; then
+  status="error"
+elif [[ "$exit_code" -eq 0 ]] && grep -Fq '@!@!@STARTMSG 2193:0 @!@!@' "$stdout_path"; then
   status="pass"
 else
   status="error"

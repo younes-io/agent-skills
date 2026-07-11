@@ -5,7 +5,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Summarize a TLC -dumpTrace json counterexample.
+Summarize a TLC counterexample trace JSON file.
 
 Usage:
   tlc_trace_summary.sh --trace path/to/counterexample.json [options]

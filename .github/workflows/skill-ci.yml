@@ -7,6 +7,39 @@ on:
       - main
 
 jobs:
+  tla-check:
+    name: TLC Script Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Shell syntax checks
+        run: |
+          set -euo pipefail
+          bash -n scripts/tests/tla_check_test.sh
+          bash -n skills/tla-check/scripts/tlc_check.sh
+          bash -n skills/tla-check/scripts/tlc_trace_summary.sh
+
+      - name: Run TLC behavioral tests
+        run: |
+          set -euo pipefail
+          jar_path="$RUNNER_TEMP/tla2tools.jar"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar \
+            --output "$jar_path"
+          printf '%s  %s\n' \
+            '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88' \
+            "$jar_path" | sha256sum --check
+          ./scripts/tests/tla_check_test.sh --jar "$jar_path"
+
   tla-proof:
     name: TLA Proof Script Tests
     runs-on: ubuntu-latest
