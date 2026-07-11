@@ -9,7 +9,7 @@ description: "Write and iteratively refine executable TLA+ specs (.tla) and TLC 
 
 - TLA+ spec(s): `*.tla`
 - TLC config(s): `*.cfg`
-- TLC run artifacts: `.tla-check/runs/<run-id>/...` (logs, json trace if any)
+- TLC run artifacts: `.tla-check/runs/<run-id>/...` (logs and a JSON trace when TLC reports a counterexample)
 
 ## Non-Negotiables (Honesty Rules)
 
@@ -103,6 +103,8 @@ Run (from the `tla-check` skill directory):
 scripts/tlc_check.sh --spec path/to/Foo.tla --cfg path/to/Foo.cfg
 ```
 
+The runner uses TLC's stable `-tool` messages and converts counterexample states to JSON. This keeps it compatible with released TLA+ distributions without scraping presentation-oriented console text.
+
 This writes a run directory under the spec folder:
 - `.tla-check/runs/<run-id>/summary.json`
 - `.tla-check/runs/<run-id>/tlc.stdout`
@@ -124,7 +126,7 @@ If TLC passes:
 ## Resources
 
 ### scripts/
-- `scripts/tlc_check.sh`: run TLC with `-dumpTrace json`, capture logs, emit `summary.json`
+- `scripts/tlc_check.sh`: run TLC in tool mode, capture logs, and emit `summary.json`
 - `scripts/tlc_trace_summary.sh`: summarize a `counterexample.json` into step-by-step diffs (optional helper)
 
 ### references/
